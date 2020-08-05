@@ -12,6 +12,7 @@ extra-doc-files:     README.md
 library
   hs-source-dirs:      src
   exposed-modules:     Prelude
+                     , Regex
   default-language:    Haskell2010
   ghc-options:         -Wall
   default-extensions:  OverloadedStrings, NoImplicitPrelude
