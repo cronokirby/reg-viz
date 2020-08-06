@@ -1,4 +1,4 @@
-module Regex (Regex (..), emptyR) where
+module Regex (Regex (..), emptyR, normalize) where
 
 import Data.Sequence (ViewL (..))
 import qualified Data.Sequence as Seq

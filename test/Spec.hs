@@ -3,7 +3,7 @@
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-import Regex (Regex (..), emptyR)
+import Regex (Regex (..), emptyR, normalize)
 import Test.Hspec
 import Prelude
 
@@ -39,7 +39,8 @@ regexGroup =
     "Regex Properties"
     [ ("sequencing is associative", sequencingAssociative),
       ("id <> r = r", sequencingLeftIdentity),
-      ("r <> id = r", sequencingRightIdentity)
+      ("r <> id = r", sequencingRightIdentity),
+      ("normalizing is idempotent", normalizingIdempotent)
     ]
 
 genRegex :: MonadGen m => m a -> m (Regex a)
@@ -64,3 +65,9 @@ sequencingRightIdentity :: Property
 sequencingRightIdentity = property do
   r1 <- forAll (genRegex Gen.bool)
   r1 <> emptyR === r1
+
+normalizingIdempotent :: Property
+normalizingIdempotent = property do
+  r <- forAll (genRegex Gen.bool)
+  let once = normalize r
+  normalize r === r
