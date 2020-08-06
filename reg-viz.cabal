@@ -15,7 +15,8 @@ library
                      , Regex
   default-language:    Haskell2010
   ghc-options:         -Wall
-  default-extensions:  OverloadedStrings, NoImplicitPrelude
+  default-extensions:  OverloadedStrings
+                     , NoImplicitPrelude
   build-depends:       base-noprelude >=4.13 && <4.14
                      , relude >=0.6.0.0 && <0.7.0.0
 
@@ -27,4 +28,21 @@ executable reg-viz
                      , reg-viz 
                      , relude >=0.6.0.0 && <0.7.0.0
   default-language:    Haskell2010
-  default-extensions:  OverloadedStrings, NoImplicitPrelude
+  default-extensions:  OverloadedStrings
+                     , NoImplicitPrelude
+
+
+test-suite reg-viz-test
+  type:              exitcode-stdio-1.0
+  main-is:           Spec.hs
+  hs-source-dirs:    test
+  ghc-options:       -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+                       base-noprelude >= 4.11 && < 5
+                     , reg-viz
+                     , hedgehog       >= 1.0  && < 1.1
+                     , hspec          >= 2.7  && < 2.8
+                     , relude         >=0.6.0.0 && <0.7.0.0
+  default-language:    Haskell2010
+  default-extensions:  OverloadedStrings
+                     , NoImplicitPrelude
