@@ -1,5 +1,7 @@
-module Regex (Regex (..)) where
+module Regex (Regex (..), emptyR) where
 
+import Data.Sequence (ViewL (..))
+import qualified Data.Sequence as Seq
 import Prelude
 
 -- `Regex a` represents a regular expression over symbols in `a`
@@ -20,6 +22,25 @@ data Regex a
 -- The empty language (over any set of symbols)
 emptyR :: Regex a
 emptyR = Sequenced mempty
+
+-- Normalizing reduces a regex to the simplest form possible
+normalize :: Regex a -> Regex a
+normalize (Only a) = Only a
+normalize (Sequenced rs) = case Seq.viewl flat of
+  r :< sq | Seq.null sq -> r
+  _ -> Sequenced flat
+  where
+    flat = rs >>= (normalize >>> split)
+    split :: Regex a -> Seq (Regex a)
+    split (Only a) = one (Only a)
+    split (Sequenced rs') = rs'
+
+instance Eq a => Eq (Regex a) where
+  r1 == r2 = equal (normalize r1) (normalize r2)
+    where
+      equal (Only a) (Only b) = a == b
+      equal (Sequenced rs1) (Sequenced rs2) = all (uncurry equal) (Seq.zip rs1 rs2)
+      equal _ _ = False
 
 -- The Semigroup instance here uses concatenation of languages
 instance Semigroup (Regex a) where

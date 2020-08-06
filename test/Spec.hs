@@ -2,6 +2,8 @@
 
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
+import Regex (Regex (..), emptyR)
 import Test.Hspec
 import Prelude
 
@@ -14,7 +16,7 @@ specs :: [SpecWith ()]
 specs = [exampleSpec]
 
 groups :: [Group]
-groups = [exampleGroup]
+groups = [exampleGroup, regexGroup]
 
 exampleSpec :: SpecWith ()
 exampleSpec =
@@ -30,3 +32,35 @@ exampleProperty :: Property
 exampleProperty = property do
   b <- forAll Gen.bool
   b === b
+
+regexGroup :: Group
+regexGroup =
+  Group
+    "Regex Properties"
+    [ ("sequencing is associative", sequencingAssociative),
+      ("id <> r = r", sequencingLeftIdentity),
+      ("r <> id = r", sequencingRightIdentity)
+    ]
+
+genRegex :: MonadGen m => m a -> m (Regex a)
+genRegex genA = Gen.choice [genOnly, genSequence]
+  where
+    genOnly = Only <$> genA
+    genSequence = Sequenced <$> Gen.seq (Range.linear 0 3) (genRegex genA)
+
+sequencingAssociative :: Property
+sequencingAssociative = property do
+  r1 <- forAll (genRegex Gen.bool)
+  r2 <- forAll (genRegex Gen.bool)
+  r3 <- forAll (genRegex Gen.bool)
+  r1 <> (r2 <> r3) === (r1 <> r2) <> r3
+
+sequencingLeftIdentity :: Property
+sequencingLeftIdentity = property do
+  r1 <- forAll (genRegex Gen.bool)
+  emptyR <> r1 === r1
+
+sequencingRightIdentity :: Property
+sequencingRightIdentity = property do
+  r1 <- forAll (genRegex Gen.bool)
+  r1 <> emptyR === r1

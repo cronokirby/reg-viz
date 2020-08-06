@@ -18,7 +18,9 @@ library
   default-extensions:  OverloadedStrings
                      , NoImplicitPrelude
   build-depends:       base-noprelude >=4.13 && <4.14
+                     , containers >= 0.6.0.0 && <0.7.0.0
                      , relude >=0.6.0.0 && <0.7.0.0
+
 
 executable reg-viz
   main-is:             Main.hs
