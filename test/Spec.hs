@@ -2,7 +2,10 @@ import Test.Hspec
 import Prelude
 
 main :: IO ()
-main = hspec exampleSpec
+main = void $ traverse hspec specs
+
+specs :: [SpecWith ()]
+specs = [exampleSpec]
 
 exampleSpec :: SpecWith ()
 exampleSpec =
