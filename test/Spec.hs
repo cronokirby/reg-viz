@@ -13,25 +13,17 @@ main = do
   traverse checkParallel groups |> void
 
 specs :: [SpecWith ()]
-specs = [exampleSpec]
+specs = [regexSpec]
 
 groups :: [Group]
-groups = [exampleGroup, regexGroup]
+groups = [regexGroup]
 
-exampleSpec :: SpecWith ()
-exampleSpec =
-  describe "Example" do
-    it "is just an example test" do
-      1 `shouldBe` 1
-      2 + 2 `shouldBe` 4
-
-exampleGroup :: Group
-exampleGroup = Group "Example Group" [("example property", exampleProperty)]
-
-exampleProperty :: Property
-exampleProperty = property do
-  b <- forAll Gen.bool
-  b === b
+regexSpec :: SpecWith ()
+regexSpec = do
+  describe "Regex <>" do
+    it "should be able to concatenate basic things" do
+      Only 'a' <> Only 'b' `shouldBe` Sequenced (fromList [Only 'a', Only 'b'])
+      Only 'a' <> Only 'b' <> Only 'c' `shouldBe` Sequenced (fromList [Only 'a', Only 'b', Only 'c'])
 
 regexGroup :: Group
 regexGroup =
