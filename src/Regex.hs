@@ -35,6 +35,14 @@ normalize (Sequenced rs) = case Seq.viewl flat of
     split (Only a) = one (Only a)
     split (Sequenced rs') = rs'
 
+-- The equality of regexes is based on first normalizing them, then comparing them
+--
+-- It's possible that we say that two regexes recognizing the same langauge are unequal.
+-- This is normal in the sense that two alternate ways of building up a regex shouldn't
+-- necessarily be considered equal. For example, is (A|B)(C|D) the same as AC|BD? not really.
+-- The normalization process is more about ensuring that implementation details don't leak
+-- out into equality, things like the fact that we represented sequencing as a rose tree
+-- instead of a binary tree, etc.
 instance Eq a => Eq (Regex a) where
   r1 == r2 = equal (normalize r1) (normalize r2)
     where
