@@ -1,4 +1,4 @@
-module Regex (Regex (..), emptyR, normalize, parse) where
+module Regex (Regex (..), emptyR, normalize, showRegex, parse) where
 
 import qualified Data.Attoparsec.Text as AP
 import Data.Sequence (ViewL (..))
@@ -19,6 +19,11 @@ data Regex a
     -- This is useful so that we don't have multiple equivalent expressions for the same language
     Sequenced (Seq (Regex a))
   deriving (Show)
+
+-- Show a Regex in the way it would be parsed
+showRegex :: (a -> Text) -> Regex a -> Text
+showRegex f (Only s) = f s
+showRegex f (Sequenced rs) = foldMap (showRegex f) rs
 
 -- The empty language (over any set of symbols)
 emptyR :: Regex a
