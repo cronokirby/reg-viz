@@ -13,6 +13,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Prelude
                      , Regex
+                     , NFA
   default-language:    Haskell2010
   ghc-options:         -Wall
   default-extensions:  OverloadedStrings
