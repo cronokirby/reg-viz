@@ -31,7 +31,7 @@ simplifyStates (NFA start states accept trans) =
     f s = Map.findWithDefault 0 s stateMap
 
 emptyNFA :: NFA s Integer
-emptyNFA = NFA 0 (Set.empty) (Set.empty) (Map.empty)
+emptyNFA = NFA 0 (Set.fromList [0]) (Set.fromList [0]) (Map.empty)
 
 -- Create an NFA for a regex only recognizing a string with a single symbol
 only :: s -> NFA s Integer
@@ -68,14 +68,14 @@ writeNFA f nfa = do
   let NFA start states accept trans = simplifyStates nfa
   write "digraph G {\n"
   write "{\n"
-  write "  node[shape=circle, label=\"\"]"
+  write "  node[shape=circle, label=\"\"]\n"
   forM_ (Set.difference states accept) <| \i -> do
     write "s"
     write (show i)
     write "\n"
   write "}\n"
   write "{\n"
-  write "  node[shape=doublecircle, label=\"\"]"
+  write "  node[shape=doublecircle, label=\"\"]\n"
   forM_ accept <| \i -> do
     write "s"
     write (show i)
