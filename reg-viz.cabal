@@ -18,6 +18,7 @@ library
   default-extensions:  OverloadedStrings
                      , NoImplicitPrelude
   build-depends:       base-noprelude >=4.13 && <4.14
+                     , attoparsec >= 0.13.0.0 && <0.14.0.0 
                      , containers >= 0.6.0.0 && <0.7.0.0
                      , relude >=0.6.0.0 && <0.7.0.0
 

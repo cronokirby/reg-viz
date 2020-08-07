@@ -1,5 +1,6 @@
-module Regex (Regex (..), emptyR, normalize) where
+module Regex (Regex (..), emptyR, normalize, parse) where
 
+import qualified Data.Attoparsec.Text as AP
 import Data.Sequence (ViewL (..))
 import qualified Data.Sequence as Seq
 import Prelude
@@ -59,3 +60,25 @@ instance Semigroup (Regex a) where
 -- The Empty language acts as the identity for concatenation
 instance Monoid (Regex a) where
   mempty = emptyR
+
+-- An error for parse errors
+newtype ParseError = ParseError Text deriving (Eq, Show)
+
+-- Try and parse a regular expression from a string
+--
+-- This uses the standard syntax for regexes, with things like a|b?c
+parse :: Text -> Either ParseError (Regex Char)
+parse input = case AP.parseOnly regexParser input of
+  Left err -> err |> toText |> ParseError |> Left
+  Right res -> Right res
+
+-- A parser for regular expressions
+regexParser :: AP.Parser (Regex Char)
+regexParser = do
+  parts <- AP.many' simpleRegex
+  return (Sequenced (fromList parts))
+  where
+    simpleRegex :: AP.Parser (Regex Char)
+    simpleRegex = do
+      c <- AP.anyChar
+      return (Only c)

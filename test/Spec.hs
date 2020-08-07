@@ -3,7 +3,7 @@
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-import Regex (Regex (..), emptyR, normalize)
+import Regex (Regex (..), emptyR, normalize, parse)
 import Test.Hspec
 import Prelude
 
@@ -24,6 +24,9 @@ regexSpec = do
     it "should be able to concatenate basic things" do
       Only 'a' <> Only 'b' `shouldBe` Sequenced (fromList [Only 'a', Only 'b'])
       Only 'a' <> Only 'b' <> Only 'c' `shouldBe` Sequenced (fromList [Only 'a', Only 'b', Only 'c'])
+  describe "Regex parse" do
+    it "should be able to parse basic sequences" do
+      parse "ab" `shouldBe` Right (Sequenced (fromList [Only 'a', Only 'b']))
 
 regexGroup :: Group
 regexGroup =
