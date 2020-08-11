@@ -14,6 +14,8 @@ import Prelude
 data Regex a
   = -- The regular language only accepting the string of that single symbol
     Only a
+  | -- A choice between many alternate options
+    Or (Seq (Regex a))
   | -- A sequence of languages, where each string is followed by a string in the next language
     -- This can also be used to represent the empty language, via Sequenced [].
     -- This is useful so that we don't have multiple equivalent expressions for the same language
@@ -24,6 +26,7 @@ data Regex a
 showRegex :: (a -> Text) -> Regex a -> Text
 showRegex f (Only s) = f s
 showRegex f (Sequenced rs) = foldMap (showRegex f) rs
+showRegex f (Or rs) = fold (Seq.intersperse "|" (fmap (\r -> "(" <> showRegex f r <> ")") rs))
 
 -- The empty language (over any set of symbols)
 emptyR :: Regex a
@@ -32,14 +35,22 @@ emptyR = Sequenced mempty
 -- Normalizing reduces a regex to the simplest form possible
 normalize :: Regex a -> Regex a
 normalize (Only a) = Only a
+normalize (Or rs) = case Seq.viewl flat of
+  r :< sq | Seq.null sq -> r
+  _ -> Or flat
+  where
+    flat = rs >>= (normalize >>> split)
+    split :: Regex a -> Seq (Regex a)
+    split (Or rs') = rs'
+    split r = one r
 normalize (Sequenced rs) = case Seq.viewl flat of
   r :< sq | Seq.null sq -> r
   _ -> Sequenced flat
   where
     flat = rs >>= (normalize >>> split)
     split :: Regex a -> Seq (Regex a)
-    split (Only a) = one (Only a)
     split (Sequenced rs') = rs'
+    split r = one r
 
 -- The equality of regexes is based on first normalizing them, then comparing them
 --
@@ -53,6 +64,7 @@ instance Eq a => Eq (Regex a) where
   r1 == r2 = equal (normalize r1) (normalize r2)
     where
       equal (Only a) (Only b) = a == b
+      equal (Or rs1) (Or rs2) = all (uncurry equal) (Seq.zip rs1 rs2)
       equal (Sequenced rs1) (Sequenced rs2) = all (uncurry equal) (Seq.zip rs1 rs2)
       equal _ _ = False
 
@@ -75,15 +87,27 @@ newtype ParseError = ParseError Text deriving (Eq, Show)
 parse :: Text -> Either ParseError (Regex Char)
 parse input = case AP.parseOnly regexParser input of
   Left err -> err |> toText |> ParseError |> Left
-  Right res -> Right res
+  Right res -> Right (res)
 
 -- A parser for regular expressions
 regexParser :: AP.Parser (Regex Char)
-regexParser = do
-  parts <- AP.many' simpleRegex
-  return (Sequenced (fromList parts))
+regexParser = normalize <$> do
+    rs <- AP.sepBy1 term (AP.char '|')
+    return (Or (Seq.fromList rs))
   where
-    simpleRegex :: AP.Parser (Regex Char)
-    simpleRegex = do
-      c <- AP.anyChar
+    term :: AP.Parser (Regex Char)
+    term = do
+      rs <- AP.many' atom
+      return (Sequenced (Seq.fromList rs))
+    atom :: AP.Parser (Regex Char)
+    atom = (parensRegex <|> onlyRegex)
+    parensRegex :: AP.Parser (Regex Char)
+    parensRegex = do
+      _ <- AP.char '('
+      r <- regexParser
+      _ <- AP.char ')'
+      return r
+    onlyRegex :: AP.Parser (Regex Char)
+    onlyRegex = do
+      c <- AP.satisfy (AP.notInClass "|()")
       return (Only c)

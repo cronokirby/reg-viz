@@ -41,17 +41,32 @@ emptyNFA = NFA 0 (Set.fromList [0]) (Set.fromList [0]) (Map.empty)
 only :: s -> NFA s Integer
 only s = NFA 0 (fromList [0, 1, 2]) (fromList [1]) (fromList [(0, [(WithSymbols (one s), 1)]), (1, [(Rest, 2)])])
 
+changeMap :: Ord b => (a -> b) -> Map a [(t, a)] -> Map b [(t, b)]
+changeMap f = fmap (fmap (\(t, a) -> (t, f a))) >>> Map.mapKeys f
+
 -- An NFA represented the language brought about by composition
 sequenced :: (Ord a, Ord b) => NFA s a -> NFA s b -> NFA s Integer
 sequenced (NFA start1 states1 accept1 trans1) (NFA start2 states2 accept2 trans2) =
   let start = Left start1
       states = Set.union (Set.map Left states1) (Set.map Right states2)
       accept = Set.map Right accept2
-      changeMap f = fmap (fmap (\(t, a) -> (t, f a))) >>> Map.mapKeys f
       bothTransitions = Map.union (changeMap Left trans1) (changeMap Right trans2)
       extraTransitions = Map.fromList (zip (Left <$> Set.toList accept1) (repeat [(Empty, Right start2)]))
       transitions = Map.unionWith (++) extraTransitions bothTransitions
    in simplifyStates (NFA start states accept transitions)
+
+data Triple a b c = T1 a | T2 b | T3 c deriving (Eq, Ord, Show)
+
+-- An NFA represented by choosing two options
+orNFA :: (Ord a, Ord b) => NFA s a -> NFA s b -> NFA s Integer
+orNFA (NFA start1 states1 accept1 trans1) (NFA start2 states2 accept2 trans2) =
+  let start = T3 (0 :: Integer)
+      states = Set.union (Set.map T1 states1) (Set.map T2 states2)
+      accept = Set.union (Set.map T1 accept1) (Set.map T2 accept2)
+      bothTransitions = Map.union (changeMap T1 trans1) (changeMap T2 trans2)
+      extraTransitions = one (start, [(Empty, T1 start1), (Empty, T2 start2)])
+      transitions = Map.unionWith (++) extraTransitions bothTransitions
+  in simplifyStates (NFA start states accept transitions)
 
 -- Create an NFA from a regular expression of some type of symbols
 --
@@ -59,6 +74,7 @@ sequenced (NFA start1 states1 accept1 trans1) (NFA start2 states2 accept2 trans2
 fromRegex :: Regex s -> NFA s Integer
 fromRegex (Only s) = only s
 fromRegex (Sequenced rs) = rs |> fmap fromRegex |> foldr sequenced emptyNFA
+fromRegex (Or rs) = rs |> fmap fromRegex |> foldr orNFA emptyNFA
 
 -- A class for being able to write things
 class Monad m => WriterM m where

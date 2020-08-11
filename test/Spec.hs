@@ -40,10 +40,11 @@ regexGroup =
     ]
 
 genRegex :: MonadGen m => m a -> m (Regex a)
-genRegex genA = Gen.choice [genOnly, genSequence]
+genRegex genA = Gen.choice [genOnly, genSequence, genOr]
   where
     genOnly = Only <$> genA
     genSequence = Sequenced <$> Gen.seq (Range.linear 0 3) (genRegex genA)
+    genOr = Or <$> Gen.seq (Range.linear 0 3) (genRegex genA)
 
 sequencingAssociative :: Property
 sequencingAssociative = property do
