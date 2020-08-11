@@ -33,9 +33,13 @@ simplifyStates (NFA start states accept trans) =
     stateMap = Map.fromList (zip (Set.toList states) [1 ..])
     f s = Map.findWithDefault 0 s stateMap
 
--- An NFA corresponding to the empty regular expression
+-- An NFA corresponding to the regular language accepting everything
 emptyNFA :: NFA s Integer
 emptyNFA = NFA 0 (Set.fromList [0]) (Set.fromList [0]) (Map.empty)
+
+-- The identity for alternation with |
+voidNFA :: NFA s Integer
+voidNFA = NFA 0 (Set.fromList [0]) (Set.fromList []) (Map.empty)
 
 -- Create an NFA for a regex only recognizing a string with a single symbol
 only :: s -> NFA s Integer
@@ -61,7 +65,7 @@ data Triple a b c = T1 a | T2 b | T3 c deriving (Eq, Ord, Show)
 orNFA :: (Ord a, Ord b) => NFA s a -> NFA s b -> NFA s Integer
 orNFA (NFA start1 states1 accept1 trans1) (NFA start2 states2 accept2 trans2) =
   let start = T3 (0 :: Integer)
-      states = Set.union (Set.map T1 states1) (Set.map T2 states2)
+      states = Set.insert start (Set.union (Set.map T1 states1) (Set.map T2 states2))
       accept = Set.union (Set.map T1 accept1) (Set.map T2 accept2)
       bothTransitions = Map.union (changeMap T1 trans1) (changeMap T2 trans2)
       extraTransitions = one (start, [(Empty, T1 start1), (Empty, T2 start2)])
@@ -74,7 +78,7 @@ orNFA (NFA start1 states1 accept1 trans1) (NFA start2 states2 accept2 trans2) =
 fromRegex :: Regex s -> NFA s Integer
 fromRegex (Only s) = only s
 fromRegex (Sequenced rs) = rs |> fmap fromRegex |> foldr sequenced emptyNFA
-fromRegex (Or rs) = rs |> fmap fromRegex |> foldr orNFA emptyNFA
+fromRegex (Or rs) = rs |> fmap fromRegex |> foldr orNFA voidNFA
 
 -- A class for being able to write things
 class Monad m => WriterM m where
